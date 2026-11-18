@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="freetv_background">#FF0B0E14</color>
+    <color name="freetv_surface">#FF161B26</color>
+    <color name="freetv_primary">#FF4F8CFF</color>
+    <color name="freetv_accent">#FFFF5A5F</color>
+    <color name="freetv_on_background">#FFE8ECF4</color>
+    <color name="ic_launcher_background">#FF0B0E14</color>
+</resources>

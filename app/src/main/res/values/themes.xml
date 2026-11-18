@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Main window theme. All real UI is drawn by Compose for TV; this only
+         provides a dark window background so there is no white flash. -->
+    <style name="Theme.FreeTV" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/freetv_background</item>
+        <item name="android:colorBackground">@color/freetv_background</item>
+        <item name="android:statusBarColor">@color/freetv_background</item>
+        <item name="android:navigationBarColor">@color/freetv_background</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+
+    <!-- Splash screen (androidx.core:core-splashscreen, works back to API 23). -->
+    <style name="Theme.FreeTV.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/freetv_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.FreeTV</item>
+    </style>
+</resources>

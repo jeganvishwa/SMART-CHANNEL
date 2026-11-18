@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FreeTV</string>
+    <string name="app_tagline">Your playlists. Your channels. Your numbers.</string>
+    <string name="home_setup_title">Welcome to FreeTV</string>
+    <string name="home_setup_message">Add an M3U playlist to start watching. Playlist management arrives in the next build.</string>
+    <string name="home_version">Version %1$s</string>
+</resources>
