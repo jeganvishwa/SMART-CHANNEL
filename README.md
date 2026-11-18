@@ -22,10 +22,12 @@ FreeTV plays **your own M3U / M3U8 playlists** on Google TV and Android TV. It h
 The ready-to-install file is **`FreeTV-debug.apk`** (build it with the commands below; it ends up in `app/build/outputs/apk/debug/app-debug.apk`).
 
 ### Option A – from this PC with ADB (recommended)
+
 1. On the TV: **Settings → System → About**, then press OK on **Android TV OS build** 7 times to unlock Developer options.
 2. **Settings → System → Developer options**: turn on **USB debugging**. On Google TV with Android 14 TV or newer, also turn on **Wireless debugging**.
 3. Find the TV's IP address under **Settings → Network & Internet → (your Wi-Fi)**.
 4. On the PC (same Wi-Fi):
+
    ```bash
    # Android 14 TV and newer: pair first using the code shown under "Wireless debugging → Pair device"
    adb pair <tv-ip>:<pairing-port>
@@ -35,15 +37,18 @@ The ready-to-install file is **`FreeTV-debug.apk`** (build it with the commands 
 
    adb install -r FreeTV-debug.apk
    ```
+
 5. Approve the "Allow USB debugging?" prompt on the TV. FreeTV then appears in your Apps row.
 
 ### Option B – without a PC
+
 1. Upload `FreeTV-debug.apk` to Google Drive or another download link.
 2. On the TV, install the **Downloader** app (by AFTVnews) from the Play Store.
 3. **Settings → Apps → Security & restrictions → Unknown sources** → allow **Downloader**.
 4. Open Downloader, enter the APK link and install it.
 
 ### First use
+
 1. Open FreeTV, press OK on **Add playlist** and enter your M3U link.
 2. Channels are detected, numbered and grouped by language automatically.
 3. Pick a language tab (Tamil, English…), press OK on a channel, and you're watching. Type a number on the remote to jump to any channel.
@@ -60,6 +65,7 @@ export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
 ./gradlew assembleDebug        # → app/build/outputs/apk/debug/app-debug.apk
 ./gradlew testDebugUnitTest    # 41 unit tests
 ```
+
 ```powershell
 # PowerShell
 $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
@@ -69,19 +75,22 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 In Android Studio: **File → Open** this folder, set **Settings → Build Tools → Gradle → Gradle JDK** to the bundled JBR 21, then Run.
 
 ### Release APK
+
 1. `keytool -genkeypair -v -keystore freetv-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias freetv`
 2. Create `keystore.properties` in the project root (it is git-ignored):
+
    ```properties
    storeFile=freetv-release.jks
    storePassword=...
    keyAlias=freetv
    keyPassword=...
    ```
+
 3. `./gradlew assembleRelease` → `app/build/outputs/apk/release/app-release.apk` (minified and signed).
 
 ## Architecture
 
-```
+```text
 com.example.freetv
 ├── data/        database (Room), dao, entity, repository (impl + PlaylistSyncer), parser (M3U, XMLTV), network
 ├── domain/      model, repository interfaces, usecase
