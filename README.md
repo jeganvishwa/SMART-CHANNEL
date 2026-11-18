@@ -17,6 +17,18 @@ FreeTV plays **your own M3U / M3U8 playlists** on Google TV and Android TV. It h
 - **Player (Media3 ExoPlayer)**: HLS, DASH and progressive streams; a single player is reused for fast zapping; buffering profiles; a stall watchdog; offline detection; audio track, subtitle and aspect ratio selection; an info banner with logo, number, name and now/next programmes; favourite toggle; optional auto-play of the last watched channel.
 - **Favourites**, an **XMLTV TV guide** (optional, `.xml` or `.xml.gz`, with time-zone correction), **background auto-refresh**, **database backup/restore** and **clear cache**.
 
+## Remote control keys
+
+| Key | Home screen | Player |
+|---|---|---|
+| 0–9 | Jump to channel number | Jump to channel number |
+| OK | Play channel (hold: add to favourites) | Show info, press again for options |
+| ▲ / ▼, CH+ / CH− | Move focus | Next / previous channel |
+| ◄ | Move focus | Channel list |
+| ► / MENU | Move focus | Options (favourite, source, audio, subtitles, aspect ratio) |
+| LAST | – | Previous channel |
+| BACK | Go back | Close panel, then exit player |
+
 ## Install on Google TV
 
 The ready-to-install file is **`FreeTV-debug.apk`** (build it with the commands below; it ends up in `app/build/outputs/apk/debug/app-debug.apk`).
