@@ -8,6 +8,7 @@ import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
+import com.example.freetv.worker.RefreshScheduler
 import dagger.hilt.android.HiltAndroidApp
 import okhttp3.OkHttpClient
 import javax.inject.Inject
@@ -29,6 +30,14 @@ class FreeTvApplication : Application(), Configuration.Provider, SingletonImageL
 
     @Inject
     lateinit var okHttpClient: dagger.Lazy<OkHttpClient>
+
+    @Inject
+    lateinit var refreshScheduler: RefreshScheduler
+
+    override fun onCreate() {
+        super.onCreate() // Hilt injects the fields here
+        refreshScheduler.start()
+    }
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()

@@ -1,6 +1,7 @@
 package com.example.freetv.presentation.theme
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.darkColorScheme
 
@@ -20,11 +21,18 @@ private val FreeTvColorScheme = darkColorScheme(
     border = FreeTvFocusBorder,
 )
 
-/** FreeTV is dark-only: TV rooms are dark and a light theme causes glare. */
+/**
+ * FreeTV is dark-only: TV rooms are dark and a light theme causes glare.
+ * [pureBlack] switches to a true-black background (OLED TVs).
+ */
 @Composable
-fun FreeTvTheme(content: @Composable () -> Unit) {
+fun FreeTvTheme(pureBlack: Boolean = false, content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = FreeTvColorScheme,
+        colorScheme = if (pureBlack) {
+            FreeTvColorScheme.copy(background = Color.Black, surface = Color(0xFF0E0E0E))
+        } else {
+            FreeTvColorScheme
+        },
         typography = FreeTvTypography,
         content = content,
     )

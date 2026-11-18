@@ -6,6 +6,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Offline detection -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Keeps Wi-Fi awake during playback (ExoPlayer WAKE_MODE_NETWORK) -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Import an M3U file by path on older TVs without a system file picker -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 
     <!-- Android TV: no touchscreen, leanback launcher. required="false" lets the
          same APK also be side-loaded on TV boxes that do not declare leanback. -->
