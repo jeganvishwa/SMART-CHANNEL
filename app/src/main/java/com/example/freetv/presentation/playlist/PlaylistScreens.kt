@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.example.freetv.domain.model.ImportStage
+import com.example.freetv.domain.model.LanguageCatalog
 import com.example.freetv.domain.model.Playlist
 import com.example.freetv.domain.model.PlaylistSourceType
 import com.example.freetv.domain.model.PlaylistStatus
@@ -77,17 +79,29 @@ fun PlaylistManagerScreen(
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
     val progress by viewModel.progress.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val languageStatus by viewModel.languageStatus.collectAsStateWithLifecycle()
     var actionsFor by remember { mutableStateOf<Playlist?>(null) }
     var deleteFor by remember { mutableStateOf<Playlist?>(null) }
     val firstFocus = remember { FocusRequester() }
 
     ScreenScaffold(
         title = "Playlists",
-        subtitle = "Add as many M3U playlists as you like. Your numbers, groups and favourites are kept when they refresh.",
+        subtitle = when {
+            languageStatus.running -> "Loading ${languageStatus.current ?: "language playlists"}…"
+            languageStatus.lastResult != null -> languageStatus.lastResult
+            else -> "Add as many M3U playlists as you like. Your numbers, groups and favourites are kept when they refresh."
+        },
         actions = {
             TvButton("Add URL", onAddUrl, icon = Icons.Filled.Add, modifier = Modifier.focusRequester(firstFocus))
             TvButton("Import file", onImportFile, icon = Icons.Filled.Folder, primary = false)
             TvButton("Refresh all", viewModel::refreshAll, icon = Icons.Filled.Refresh, primary = false)
+            TvButton(
+                "Language playlists",
+                { viewModel.refreshLanguagePlaylists() },
+                icon = Icons.Filled.Language,
+                primary = false,
+                enabled = !languageStatus.running,
+            )
         },
     ) {
         val list = playlists
@@ -148,7 +162,10 @@ fun PlaylistManagerScreen(
 @Composable
 private fun PlaylistRow(playlist: Playlist, progressText: String?, onClick: () -> Unit) {
     val dateFormat = remember { DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT) }
-    val source = if (playlist.sourceType == PlaylistSourceType.FILE) "Local file" else UrlSanitizer.redact(playlist.url)
+    val source = listOfNotNull(
+        LanguageCatalog.displayFolder(playlist.folder),
+        if (playlist.sourceType == PlaylistSourceType.FILE) "Local file" else UrlSanitizer.redact(playlist.url),
+    ).joinToString(" · ")
     val refreshed = playlist.lastRefreshAt?.let { "updated " + dateFormat.format(Date(it)) } ?: "never updated"
     val statusText = when {
         progressText != null -> "Refreshing… $progressText"

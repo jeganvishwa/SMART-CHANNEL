@@ -15,6 +15,8 @@ import com.example.freetv.domain.repository.EpgRepository
 import com.example.freetv.domain.repository.GroupRepository
 import com.example.freetv.domain.repository.PlaylistRepository
 import com.example.freetv.domain.repository.SettingsRepository
+import com.example.freetv.preferences.StartupPreferences
+import com.example.freetv.preferences.StartupPrefs
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,7 +33,10 @@ class SettingsViewModel @Inject constructor(
     private val backup: BackupRepository,
     groups: GroupRepository,
     playlists: PlaylistRepository,
+    private val startupPrefs: StartupPreferences,
 ) : ViewModel() {
+
+    val startup: StateFlow<StartupPrefs?> = startupPrefs.prefs.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val state: StateFlow<AppSettings?> = settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -64,6 +69,9 @@ class SettingsViewModel @Inject constructor(
     fun setDigits(value: Int) = launch { settings.setChannelNumberDigits(value) }
     fun setAutoPlay(value: Boolean) = launch { settings.setAutoPlayLastChannel(value) }
     fun setStartScreen(screen: StartScreen) = launch { settings.setStartScreen(screen) }
+    fun setRestoreLanguage(value: Boolean) = launch { startupPrefs.setRestoreLastLanguage(value) }
+    fun setRestoreGroup(value: Boolean) = launch { startupPrefs.setRestoreLastGroup(value) }
+    fun setShowDiagnostics(value: Boolean) = launch { startupPrefs.setShowStartupDiagnostics(value) }
     fun setPureBlack(value: Boolean) = launch { settings.setPureBlackTheme(value) }
     fun setEpgUrl(url: String) = launch { settings.setEpgUrl(url) }
     fun setEpgAuto(value: Boolean) = launch { settings.setEpgAutoRefresh(value) }

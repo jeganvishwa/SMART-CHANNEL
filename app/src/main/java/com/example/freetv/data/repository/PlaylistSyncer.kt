@@ -37,10 +37,18 @@ class PlaylistSyncer @Inject constructor(
         parsed: M3uPlaylist,
         autoNumber: Boolean,
         now: Long = System.currentTimeMillis(),
+        /**
+         * Language group of a language playlist (e.g. "Tamil"). Every channel of such a
+         * playlist is put in that group, even when its entries carry no language tag.
+         */
+        playlistLanguage: String? = null,
     ): ImportResult.Success = db.withTransaction {
         val (merged, duplicates) = ChannelClassifier.merge(parsed.entries)
         val existing = channelDao.getByPlaylist(playlistId).associateBy { it.stableKey }
         val autoGroups = groupDao.getAll().filter { it.type == GroupType.LANGUAGE.name || it.type == GroupType.CATEGORY.name }
+        val playlistLanguageGroup = playlistLanguage?.let { lang ->
+            autoGroups.firstOrNull { it.type == GroupType.LANGUAGE.name && it.name.equals(lang, ignoreCase = true) }
+        }
         val languageKeywords = autoGroups.filter { it.type == GroupType.LANGUAGE.name }.associate { it.name to it.keywords }
         val groupPositions = HashMap<Long, Int>()
         var nextNumber = (channelDao.maxNumber() ?: 0) + 1
@@ -52,6 +60,7 @@ class PlaylistSyncer @Inject constructor(
         for (channel in merged) {
             val entry = channel.primary
             val language = ChannelClassifier.detectLanguage(entry.language, entry.groupTitle, entry.name, languageKeywords)
+                ?: playlistLanguage
             val old = existing[channel.key]
             val channelId: Long
             if (old == null) {
@@ -93,7 +102,8 @@ class PlaylistSyncer @Inject constructor(
             seen += channelId
 
             for (group in autoGroups) {
-                if (ChannelClassifier.matches(group.name, group.keywords, language, entry.groupTitle, entry.name)) {
+                val isPlaylistLanguage = group.id == playlistLanguageGroup?.id
+                if (isPlaylistLanguage || ChannelClassifier.matches(group.name, group.keywords, language, entry.groupTitle, entry.name)) {
                     val position = (groupPositions[group.id] ?: groupDao.maxMemberPosition(group.id)) + 1
                     groupPositions[group.id] = position
                     groupDao.insertMemberIgnore(ChannelGroupMemberEntity(channelId, group.id, position, "AUTO"))

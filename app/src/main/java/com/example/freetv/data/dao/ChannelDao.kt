@@ -70,6 +70,12 @@ interface ChannelDao {
     )
     suspend fun getFavorites(): List<ChannelListRow>
 
+    @Query(
+        "SELECT $ROW_COLUMNS FROM channels c WHERE c.lastWatchedAt IS NOT NULL AND $VISIBLE " +
+            "ORDER BY c.lastWatchedAt DESC LIMIT :limit",
+    )
+    fun observeRecentlyWatched(limit: Int): Flow<List<ChannelListRow>>
+
     /** Manager list: includes hidden channels; optional playlist filter (-1 = all) and name search. */
     @Query(
         "SELECT $ROW_COLUMNS FROM channels c " +

@@ -34,6 +34,8 @@ class ChannelRepositoryImpl @Inject constructor(
     override fun observeVisibleInGroup(groupId: Long): Flow<List<ChannelItem>> =
         channelDao.observeVisibleInGroup(groupId).map { it.toDomain() }
     override fun observeFavorites(): Flow<List<ChannelItem>> = channelDao.observeFavorites().map { it.toDomain() }
+    override fun observeRecentlyWatched(limit: Int): Flow<List<ChannelItem>> =
+        channelDao.observeRecentlyWatched(limit).map { it.toDomain() }
     override fun observeForManager(playlistId: Long?, query: String): Flow<List<ChannelItem>> =
         channelDao.observeForManager(playlistId ?: -1L, query.trim()).map { it.toDomain() }
     override fun observeChannelCount(): Flow<Int> = channelDao.observeCount()

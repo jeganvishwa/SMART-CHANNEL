@@ -7,9 +7,23 @@ sealed interface FreeTvRoute {
     @Serializable
     data object Home : FreeTvRoute
 
-    /** Full-screen player. [contextType] is a PlaybackContextType name; [contextId] is the group id when relevant. */
+    /**
+     * Full-screen player. [contextType] is a PlaybackContextType name; [contextId] is the group id when relevant.
+     * [fromStartup] marks the automatic restore of the last watched channel.
+     */
     @Serializable
-    data class Player(val channelId: Long, val contextType: String = "ALL", val contextId: Long = -1) : FreeTvRoute
+    data class Player(
+        val channelId: Long,
+        val contextType: String = "ALL",
+        val contextId: Long = -1,
+        val fromStartup: Boolean = false,
+    ) : FreeTvRoute
+
+    @Serializable
+    data object GoogleTvSetup : FreeTvRoute
+
+    @Serializable
+    data object StartupDiagnostics : FreeTvRoute
 
     @Serializable
     data object Playlists : FreeTvRoute

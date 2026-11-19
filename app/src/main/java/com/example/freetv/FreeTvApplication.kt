@@ -8,6 +8,7 @@ import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
+import com.example.freetv.data.repository.LanguagePlaylistInitializer
 import com.example.freetv.worker.RefreshScheduler
 import dagger.hilt.android.HiltAndroidApp
 import okhttp3.OkHttpClient
@@ -34,9 +35,14 @@ class FreeTvApplication : Application(), Configuration.Provider, SingletonImageL
     @Inject
     lateinit var refreshScheduler: RefreshScheduler
 
+    @Inject
+    lateinit var languagePlaylists: LanguagePlaylistInitializer
+
     override fun onCreate() {
         super.onCreate() // Hilt injects the fields here
         refreshScheduler.start()
+        // First launch only: add Tamil / English / Hindi / Malayalam playlists (background, no UI launch).
+        languagePlaylists.initializeOnFirstLaunch()
     }
 
     override val workManagerConfiguration: Configuration

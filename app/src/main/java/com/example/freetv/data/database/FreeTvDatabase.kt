@@ -44,7 +44,7 @@ abstract class FreeTvDatabase : RoomDatabase() {
     abstract fun epgDao(): EpgDao
 
     companion object {
-        const val VERSION = 1
+        const val VERSION = 2
         const val NAME = "freetv.db"
     }
 }
@@ -56,7 +56,16 @@ abstract class FreeTvDatabase : RoomDatabase() {
  * because the database holds the user's numbers, groups and favourites.
  */
 object DatabaseMigrations {
-    val ALL: Array<Migration> = arrayOf()
+
+    /** v2: language playlists – adds languageCode and folder to playlists (nullable, no data loss). */
+    val MIGRATION_1_2 = object : Migration(1, 2) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `playlists` ADD COLUMN `languageCode` TEXT")
+            db.execSQL("ALTER TABLE `playlists` ADD COLUMN `folder` TEXT")
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2)
 }
 
 /** Seeds the default language and category groups on first creation. */

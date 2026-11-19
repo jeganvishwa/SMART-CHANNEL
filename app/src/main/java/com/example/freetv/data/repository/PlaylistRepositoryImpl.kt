@@ -15,6 +15,7 @@ import com.example.freetv.di.IoDispatcher
 import com.example.freetv.domain.model.ImportProgress
 import com.example.freetv.domain.model.ImportResult
 import com.example.freetv.domain.model.ImportStage
+import com.example.freetv.domain.model.LanguageCatalog
 import com.example.freetv.domain.model.Playlist
 import com.example.freetv.domain.repository.PlaylistRepository
 import com.example.freetv.domain.repository.SettingsRepository
@@ -174,7 +175,8 @@ class PlaylistRepositoryImpl @Inject constructor(
 
             onProgress(ImportProgress(ImportStage.SAVING, null, "Saving ${parsed.entries.size} entries…"))
             val autoNumber = settings.current().autoNumberNewChannels
-            val result = withContext(io) { syncer.sync(playlistId, parsed, autoNumber) }
+            val languageGroup = LanguageCatalog.byCode(playlist.languageCode)?.groupName
+            val result = withContext(io) { syncer.sync(playlistId, parsed, autoNumber, playlistLanguage = languageGroup) }
 
             playlistDao.getById(playlistId)?.let {
                 playlistDao.update(

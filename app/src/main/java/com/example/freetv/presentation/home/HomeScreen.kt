@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -69,7 +70,10 @@ import com.example.freetv.presentation.components.FocusSurface
 import com.example.freetv.presentation.components.LoadingState
 import com.example.freetv.presentation.components.MessagePill
 import com.example.freetv.presentation.components.NumericInputOverlay
+import com.example.freetv.presentation.components.MessageDialog
 import com.example.freetv.presentation.components.ProgressBar
+import com.example.freetv.presentation.components.Spinner
+import com.example.freetv.presentation.components.TvButton
 import kotlinx.coroutines.delay
 
 enum class HomeDestination { FAVORITES, GUIDE, PLAYLISTS, CHANNELS, GROUPS, NUMBERS, SETTINGS, ADD_PLAYLIST }
@@ -84,6 +88,8 @@ fun HomeScreen(
     val programs by viewModel.currentPrograms.collectAsStateWithLifecycle()
     val numericInput by viewModel.numeric.input.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val startupMessage by viewModel.startupMessage.collectAsStateWithLifecycle()
+    val diagnosticsText by viewModel.diagnosticsText.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
@@ -123,7 +129,17 @@ fun HomeScreen(
                     .fillMaxHeight()
                     .padding(start = 24.dp, end = 40.dp, top = 24.dp),
             ) {
-                Text("FreeTV", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("FreeTV", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(24.dp))
+                    state.importStatus?.let { status ->
+                        Spinner(size = 20.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Text(status, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    if (!state.online) OfflineBanner(onRetry = viewModel::retryConnection)
+                }
                 Spacer(Modifier.height(12.dp))
                 when {
                     state.loading -> LoadingState()
@@ -137,10 +153,16 @@ fun HomeScreen(
                     else -> {
                         TabsRow(state.tabs, state.selectedTab, viewModel::selectTab)
                         Spacer(Modifier.height(16.dp))
-                        if (state.channels.isEmpty()) {
+                        if (state.channels.isEmpty() && state.importStatus != null) {
+                            LoadingState(state.importStatus!!)
+                        } else if (state.channels.isEmpty()) {
                             EmptyState(
                                 title = "No channels here",
-                                message = "Pick another language or category, or add channels to this group in Groups.",
+                                message = if (state.selectedTab == HomeViewModel.TAB_RECENT) {
+                                    "Channels you watch will appear here."
+                                } else {
+                                    "Pick another language or category, or add channels to this group in Groups."
+                                },
                             )
                         } else {
                             ChannelGrid(
@@ -158,7 +180,30 @@ fun HomeScreen(
         NumericInputOverlay(numericInput, Modifier.align(Alignment.TopEnd).padding(32.dp))
         MessagePill(message, Modifier.align(Alignment.BottomCenter).padding(bottom = 32.dp))
     }
+
+    startupMessage?.let { MessageDialog("FreeTV", it, viewModel::dismissStartupMessage) }
+    if (startupMessage == null) {
+        diagnosticsText?.let { MessageDialog("Startup diagnostics", it, viewModel::dismissDiagnostics) }
+    }
 }
+
+/** Shown while the TV has no internet: saved channels stay visible; Retry re-checks once. */
+@Composable
+private fun OfflineBanner(onRetry: () -> Unit) {
+    Row(
+        Modifier
+            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.18f), RoundedCornerShape(24.dp))
+            .padding(start = 16.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.WifiOff, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text("Offline – showing saved channels", style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.width(12.dp))
+        TvButton("Retry", onRetry, primary = false)
+    }
+}
+
 
 @Composable
 private fun SideMenu(onNavigate: (HomeDestination) -> Unit) {

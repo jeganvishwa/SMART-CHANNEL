@@ -83,6 +83,14 @@ fun PlayerScreen(
     val numericInput by viewModel.numeric.input.collectAsStateWithLifecycle()
     val rootFocus = remember { FocusRequester() }
 
+    // A failed automatic restore returns to home after showing the error briefly.
+    LaunchedEffect(Unit) {
+        viewModel.exitEvents.collect {
+            delay(3_000)
+            onExit()
+        }
+    }
+
     LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onStart() }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.onStop() }
 

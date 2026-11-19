@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.example.freetv.data.repository.LanguagePlaylistInitializer
 import com.example.freetv.domain.model.ImportProgress
 import com.example.freetv.domain.model.ImportResult
 import com.example.freetv.domain.model.Playlist
@@ -32,7 +33,14 @@ import javax.inject.Inject
 @HiltViewModel
 class PlaylistManagerViewModel @Inject constructor(
     private val repository: PlaylistRepository,
+    private val languagePlaylists: LanguagePlaylistInitializer,
 ) : ViewModel() {
+
+    /** Import progress / result of the built-in language playlists. */
+    val languageStatus: StateFlow<LanguagePlaylistInitializer.Status> = languagePlaylists.status
+
+    /** Adds any missing Tamil / English / Hindi / Malayalam playlists and refreshes all four. */
+    fun refreshLanguagePlaylists() = languagePlaylists.addAndRefreshAll()
 
     val playlists: StateFlow<List<Playlist>?> = repository.observePlaylists()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

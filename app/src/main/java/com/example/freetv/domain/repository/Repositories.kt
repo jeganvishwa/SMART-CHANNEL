@@ -53,6 +53,7 @@ interface ChannelRepository {
     fun observeAllVisible(): Flow<List<ChannelItem>>
     fun observeVisibleInGroup(groupId: Long): Flow<List<ChannelItem>>
     fun observeFavorites(): Flow<List<ChannelItem>>
+    fun observeRecentlyWatched(limit: Int = 50): Flow<List<ChannelItem>>
     fun observeForManager(playlistId: Long?, query: String): Flow<List<ChannelItem>>
     fun observeChannelCount(): Flow<Int>
     fun observeMaxNumber(): Flow<Int?>

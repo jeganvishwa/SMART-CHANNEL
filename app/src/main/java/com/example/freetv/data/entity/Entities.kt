@@ -30,6 +30,10 @@ data class PlaylistEntity(
     val autoRefresh: Boolean = true,
     /** EPG URL announced in the playlist header (url-tvg / x-tvg-url). */
     val headerEpgUrl: String? = null,
+    /** ISO 639-2 language code of a language playlist (e.g. "tam"); null for normal playlists. Added in DB v2. */
+    val languageCode: String? = null,
+    /** Logical folder shown in the UI, e.g. "Languages/Tamil". Added in DB v2. */
+    val folder: String? = null,
 )
 
 /**

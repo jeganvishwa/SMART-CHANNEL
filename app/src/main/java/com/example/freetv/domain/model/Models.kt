@@ -17,6 +17,8 @@ data class Playlist(
     val lastError: String?,
     val autoRefresh: Boolean,
     val headerEpgUrl: String?,
+    val languageCode: String? = null,
+    val folder: String? = null,
 )
 
 /** Lightweight channel used in lists, grids and the player zapping list. */

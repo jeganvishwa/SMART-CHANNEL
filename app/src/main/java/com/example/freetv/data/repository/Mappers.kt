@@ -30,6 +30,8 @@ internal fun PlaylistEntity.toDomain() = Playlist(
     lastError = lastError,
     autoRefresh = autoRefresh,
     headerEpgUrl = headerEpgUrl,
+    languageCode = languageCode,
+    folder = folder,
 )
 
 internal fun ChannelListRow.toDomain() = ChannelItem(

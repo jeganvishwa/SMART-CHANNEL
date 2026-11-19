@@ -22,6 +22,15 @@
         android:name="android.hardware.touchscreen"
         android:required="false" />
 
+    <!-- Android 11+ package visibility: lets FreeTV see which apps can act as Home
+         (for the "default Home" status and the restore-launcher guide). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+    </queries>
+
     <application
         android:name=".FreeTvApplication"
         android:allowBackup="false"
@@ -47,6 +56,13 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                 <!-- Phones / TV boxes with a regular launcher -->
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Lets the user choose FreeTV as the default Home app (HOME button).
+                 Android / the TV firmware decides whether it is honoured; FreeTV never sets it itself. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 

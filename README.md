@@ -17,6 +17,57 @@ FreeTV plays **your own M3U / M3U8 playlists** on Google TV and Android TV. It h
 - **Player (Media3 ExoPlayer)**: HLS, DASH and progressive streams; a single player is reused for fast zapping; buffering profiles; a stall watchdog; offline detection; audio track, subtitle and aspect ratio selection; an info banner with logo, number, name and now/next programmes; favourite toggle; optional auto-play of the last watched channel.
 - **Favourites**, an **XMLTV TV guide** (optional, `.xml` or `.xml.gz`, with time-zone correction), **background auto-refresh**, **database backup/restore** and **clear cache**.
 
+## Built-in language playlists
+
+On first launch FreeTV adds four public playlists from the [iptv-org](https://github.com/iptv-org/iptv) project as normal playlist records and imports them in the background:
+
+| Folder | Playlist | Code | URL |
+|---|---|---|---|
+| Languages / Tamil | Tamil TV | tam | https://iptv-org.github.io/iptv/languages/tam.m3u |
+| Languages / English | English TV | eng | https://iptv-org.github.io/iptv/languages/eng.m3u |
+| Languages / Hindi | Hindi TV | hin | https://iptv-org.github.io/iptv/languages/hin.m3u |
+| Languages / Malayalam | Malayalam TV | mal | https://iptv-org.github.io/iptv/languages/mal.m3u |
+
+Every channel from a language playlist goes into its language group (தமிழ் Tamil, English, हिन्दी Hindi, മലയാളം Malayalam on the home screen), in addition to category groups such as News or Music. **Playlists → Language playlists** re-adds any you deleted and refreshes all four. A failed refresh keeps the channels already imported. Streams come from a public list, so not every channel will work in every country.
+
+Home screen tabs: languages, Favourites, Recently watched, All channels, then category and custom groups.
+
+## Startup and Google TV Home
+
+**Settings → Google TV Setup** shows:
+
+- Whether FreeTV is the default Home app (Yes / No / Unknown). This is read from Android's RoleManager or HOME resolution, never from the manifest alone.
+- A button that asks Android to make FreeTV the Home app (Android 10+, where the TV allows it), and a button that opens the Home settings, with manual steps as a fallback.
+- An ADB guide that uses this TV's real package and activity.
+- How to restore the original launcher, listing the other Home apps actually found on the TV.
+- **Startup Diagnostics**, with Refresh and Copy buttons.
+
+Startup settings:
+
+| Setting | Default |
+|---|---|
+| Auto-play last watched channel | Off |
+| Restore last selected language | On |
+| Restore last selected group | On |
+| Show startup diagnostics | Off |
+
+When FreeTV is opened, it restores the language or group and, if auto-play is on, plays the last channel. It does this only when the channel still exists, has a valid stream and the TV is online; it also tries the stream that worked last time first. If playback fails, FreeTV returns to home with the error. When offline, FreeTV shows home with an offline banner and a Retry button.
+
+**Limitations (by design):** FreeTV never starts itself in the background or at boot. Whether the HOME button opens FreeTV, and what appears after power-on or wake from standby, is decided by the TV's firmware. Many Google TV devices only allow Google's own Home screen.
+
+### ADB commands
+
+```bash
+adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME
+adb shell pm list packages | grep freetv
+# debug build component (check the exact one in Settings → Google TV Setup):
+adb shell cmd package set-home-activity com.example.freetv.debug/com.example.freetv.MainActivity
+adb shell input keyevent KEYCODE_HOME
+adb shell dumpsys activity activities | findstr mResumedActivity   # Windows
+```
+
+To restore the original launcher, use Settings → Apps → Default apps → Home app. Or run `set-home-activity` with the original launcher's component, exactly as listed by the query command or in FreeTV's Google TV Setup screen. FreeTV never disables or uninstalls Google's launcher.
+
 ## Remote control keys
 
 | Key | Home screen | Player |
@@ -75,7 +126,7 @@ A JDK 17+ is required. Android Studio's bundled JBR 21 works:
 # Git Bash
 export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
 ./gradlew assembleDebug        # → app/build/outputs/apk/debug/app-debug.apk
-./gradlew testDebugUnitTest    # 41 unit tests
+./gradlew testDebugUnitTest    # 67 unit tests
 ```
 
 ```powershell
@@ -118,6 +169,6 @@ How a refresh keeps your changes: each channel is identified by its playlist plu
 
 ## Tests
 
-`./gradlew testDebugUnitTest` runs 41 tests covering M3U parsing, duplicate merging, multiple-playlist import, refresh preservation, group creation and assignment, number assignment, duplicate-number prevention and swapping, backup-stream failover, remote numeric input, language persistence, XMLTV parsing and URL redaction.
+`./gradlew testDebugUnitTest` runs 67 tests covering M3U parsing, duplicate merging, multiple-playlist import, refresh preservation, group creation and assignment, number assignment, duplicate-number prevention and swapping, backup-stream failover, remote numeric input, language persistence, XMLTV parsing, URL redaction, the v1→v2 database migration, startup decisions, language/group restore, default-launcher status, language playlist seeding and last-watched persistence.
 
 Manual check on a TV: remote navigation on every screen, number keys in the player and on home, Home/Back during playback (playback stops and resumes), restarting the app (language and last channel restored), unplugging the network during playback (the app waits, then resumes), and a large playlist (10k+ channels).

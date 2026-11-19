@@ -21,6 +21,13 @@ import com.example.freetv.domain.usecase.ResolveChannelNumberUseCase
 import com.example.freetv.player.ExoPlayerManager
 import com.example.freetv.player.NumericChannelController
 import com.example.freetv.player.PlaybackController
+import com.example.freetv.player.PlaybackState
+import com.example.freetv.player.PlaybackStatus
+import com.example.freetv.preferences.StartupPreferences
+import com.example.freetv.startup.PlaybackRestoreManager
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
 import com.example.freetv.player.TrackOption
 import com.example.freetv.presentation.navigation.FreeTvRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -61,6 +68,8 @@ class PlayerViewModel @Inject constructor(
     private val getPlaybackList: GetPlaybackListUseCase,
     private val resolveNumber: ResolveChannelNumberUseCase,
     private val rememberWatched: RememberWatchedChannelUseCase,
+    private val restoreManager: PlaybackRestoreManager,
+    private val startupPrefs: StartupPreferences,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<FreeTvRoute.Player>()
@@ -84,6 +93,14 @@ class PlayerViewModel @Inject constructor(
     private var messageJob: Job? = null
     private var favoriteJob: Job? = null
     private var timeoutMs = 2_000L
+
+    /** True while the automatic start-up restore of the last channel has not succeeded or failed yet. */
+    private var restorePending = route.fromStartup
+    private var reportedStreamFor: Long? = null
+
+    private val _exitEvents = Channel<String>(Channel.BUFFERED)
+    /** Emits a message when the player should close itself (failed start-up restore). */
+    val exitEvents: Flow<String> = _exitEvents.receiveAsFlow()
     private var maxDigits = 3
 
     val numeric = NumericChannelController(
@@ -114,8 +131,14 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val list = getPlaybackList(contextType, contextId)
             _ui.update { it.copy(channelList = list) }
-            play(route.channelId, rememberPrevious = false)
+            val preferredStream = if (route.fromStartup) {
+                startupPrefs.current().lastWatched?.takeIf { it.channelId == route.channelId }?.streamIndex ?: 0
+            } else {
+                0
+            }
+            play(route.channelId, rememberPrevious = false, preferredStream = preferredStream.coerceAtLeast(0))
         }
+        viewModelScope.launch { controller.state.collect(::onPlaybackState) }
     }
 
     fun onStart() = controller.attach()
@@ -127,7 +150,29 @@ class PlayerViewModel @Inject constructor(
         super.onCleared()
     }
 
-    fun play(channelId: Long, rememberPrevious: Boolean = true) {
+    private fun onPlaybackState(state: PlaybackState) {
+        val channel = _ui.value.channel ?: return
+        when (state.status) {
+            PlaybackStatus.PLAYING -> {
+                if (reportedStreamFor != channel.id) {
+                    reportedStreamFor = channel.id
+                    viewModelScope.launch { rememberWatched.rememberWorkingStream(channel.id, state.streamIndex) }
+                }
+                if (restorePending) {
+                    restorePending = false
+                    restoreManager.markRestoreSuccess(channel.name)
+                }
+            }
+            PlaybackStatus.ALL_FAILED, PlaybackStatus.NO_STREAMS -> if (restorePending) {
+                restorePending = false
+                restoreManager.markRestoreFailed(channel.name, state.message)
+                _exitEvents.trySend(state.message ?: "Playback failed")
+            }
+            else -> Unit
+        }
+    }
+
+    fun play(channelId: Long, rememberPrevious: Boolean = true, preferredStream: Int = 0) {
         viewModelScope.launch {
             val current = _ui.value.channel
             if (current?.id == channelId && _ui.value.streams.isNotEmpty()) return@launch
@@ -136,7 +181,14 @@ class PlayerViewModel @Inject constructor(
                 showMessage("Channel not available")
                 return@launch
             }
-            if (rememberPrevious && current != null) previousChannelId = current.id
+            if (rememberPrevious && current != null) {
+                previousChannelId = current.id
+                // The user zapped away: the start-up restore is no longer what is playing.
+                if (restorePending) {
+                    restorePending = false
+                    restoreManager.markRestoreSuccess(current.name)
+                }
+            }
 
             var list = _ui.value.channelList
             if (list.none { it.id == channelId }) {
@@ -154,9 +206,9 @@ class PlayerViewModel @Inject constructor(
             _ui.update {
                 it.copy(channel = item, streams = streams, channelList = list, nowNext = NowNext(null, null), panel = PlayerPanel.NONE)
             }
-            controller.playChannel(streams)
+            controller.playChannel(streams, preferredStream.coerceIn(0, (streams.size - 1).coerceAtLeast(0)))
             showInfo()
-            rememberWatched(channelId)
+            rememberWatched(item, contextType, contextId)
             observeFavorite(channelId)
             _ui.update { it.copy(nowNext = epg.getNowNext(item.tvgId, item.tvgName, item.name)) }
         }

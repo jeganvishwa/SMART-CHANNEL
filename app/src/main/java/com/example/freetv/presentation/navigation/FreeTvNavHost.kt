@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
-import com.example.freetv.presentation.StartupDecision
+import com.example.freetv.startup.StartupDecision
 import com.example.freetv.presentation.channels.ChannelEditScreen
 import com.example.freetv.presentation.channels.ChannelManagerScreen
 import com.example.freetv.presentation.channels.ChannelNumbersScreen
@@ -29,11 +29,14 @@ import com.example.freetv.presentation.home.HomeScreen
 import com.example.freetv.presentation.player.PlayerScreen
 import com.example.freetv.presentation.playlist.AddPlaylistScreen
 import com.example.freetv.presentation.playlist.PlaylistManagerScreen
+import com.example.freetv.presentation.settings.GoogleTvSetupScreen
 import com.example.freetv.presentation.settings.SettingsScreen
+import com.example.freetv.presentation.settings.StartupDiagnosticsScreen
 
 @Composable
 fun FreeTvNavHost(
     startup: StartupDecision,
+    homeRequests: Int,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
@@ -43,7 +46,20 @@ fun FreeTvNavHost(
         if (!startupHandled) {
             startupHandled = true
             if (startup.openFavorites) navController.navigate(FreeTvRoute.Favorites)
-            startup.autoPlayChannelId?.let { navController.navigate(FreeTvRoute.Player(it)) }
+            startup.autoPlay?.let { target ->
+                navController.navigate(
+                    FreeTvRoute.Player(target.channelId, target.contextType, target.contextId, fromStartup = true),
+                )
+            }
+        }
+    }
+
+    // HOME button (FreeTV chosen as default Home): return to the FreeTV home screen.
+    var handledHomeRequests by rememberSaveable { mutableStateOf(homeRequests) }
+    LaunchedEffect(homeRequests) {
+        if (homeRequests != handledHomeRequests) {
+            handledHomeRequests = homeRequests
+            navController.popBackStack(FreeTvRoute.Home, inclusive = false)
         }
     }
 
@@ -125,7 +141,13 @@ fun FreeTvNavHost(
         composable<FreeTvRoute.Guide> {
             EpgScreen(onPlay = { play(it) })
         }
-        composable<FreeTvRoute.Settings> { SettingsScreen() }
+        composable<FreeTvRoute.Settings> {
+            SettingsScreen(onGoogleTvSetup = { navController.navigate(FreeTvRoute.GoogleTvSetup) })
+        }
+        composable<FreeTvRoute.GoogleTvSetup> {
+            GoogleTvSetupScreen(onDiagnostics = { navController.navigate(FreeTvRoute.StartupDiagnostics) })
+        }
+        composable<FreeTvRoute.StartupDiagnostics> { StartupDiagnosticsScreen() }
     }
 }
 }
