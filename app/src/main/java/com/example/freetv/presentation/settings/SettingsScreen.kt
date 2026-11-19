@@ -49,7 +49,7 @@ private val TIMEOUTS_MS = listOf(1_000L, 1_500L, 2_000L, 2_500L, 3_000L, 4_000L)
 private val OFFSETS = (-12..12).flatMap { h -> listOf(h * 60, h * 60 + 30) }.filter { it in -720..720 }.distinct()
 
 @Composable
-fun SettingsScreen(onGoogleTvSetup: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(onStartupDiagnostics: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val settings by viewModel.state.collectAsStateWithLifecycle()
     val startup by viewModel.startup.collectAsStateWithLifecycle()
     val languages by viewModel.languageGroups.collectAsStateWithLifecycle()
@@ -106,12 +106,12 @@ fun SettingsScreen(onGoogleTvSetup: () -> Unit, viewModel: SettingsViewModel = h
                 }, subtitle = "Add more languages in Groups → Create group → Language")
             }
 
-            item { SectionHeader("Startup & Google TV") }
+            item { SectionHeader("Startup") }
             item {
                 ListRow(
-                    "Google TV Setup",
-                    subtitle = "Set FreeTV as default Home, restore the original launcher, startup diagnostics",
-                    onClick = onGoogleTvSetup,
+                    "Startup diagnostics",
+                    subtitle = "Network, last channel, auto-play and last restore result",
+                    onClick = onStartupDiagnostics,
                 )
             }
             item {

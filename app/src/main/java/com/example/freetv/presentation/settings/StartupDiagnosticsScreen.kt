@@ -76,7 +76,7 @@ fun StartupDiagnosticsScreen(viewModel: StartupDiagnosticsViewModel = hiltViewMo
 
     ScreenScaffold(
         title = "Startup Diagnostics",
-        subtitle = "\"Unknown\" means this TV does not let apps check that item – it is not a failure.",
+        subtitle = "What FreeTV found the last time it was opened",
         actions = {
             TvButton("Refresh diagnostics", viewModel::refresh, icon = Icons.Filled.Refresh, modifier = Modifier.focusRequester(firstFocus))
             TvButton("Copy diagnostics", { viewModel.copy(context) }, primary = false)
@@ -110,8 +110,8 @@ fun StartupDiagnosticsScreen(viewModel: StartupDiagnosticsViewModel = hiltViewMo
                 item {
                     GuideCard(
                         "About these checks",
-                        "Default Home is read from Android (RoleManager / the HOME intent). If the TV hides it, the result is Unknown. " +
-                            "\"Last playback restoration\" shows what happened the last time auto-play tried to resume a channel.",
+                                                    "\"Last playback restoration\" shows what happened the last time auto-play tried to resume a channel. " +
+                            "FreeTV only runs when you open it – it does not start by itself when the TV turns on.",
                     )
                 }
             }
@@ -122,4 +122,10 @@ fun StartupDiagnosticsScreen(viewModel: StartupDiagnosticsViewModel = hiltViewMo
         runCatching { firstFocus.requestFocus() }
     }
     message?.let { MessageDialog("Diagnostics", it) { viewModel.message.value = null } }
+}
+
+/** Focusable text block (so D-pad scrolling reaches it on TV). */
+@Composable
+fun GuideCard(title: String, body: String) {
+    ListRow(title = title, subtitle = body, onClick = {})
 }

@@ -25,18 +25,10 @@ class MainViewModel @Inject constructor(
     /** Null while loading; the splash screen stays visible until it is set. */
     val startup: StateFlow<StartupDecision?> = _startup.asStateFlow()
 
-    private val _homeRequests = MutableStateFlow(0)
-    /** Incremented when the HOME button brings FreeTV (as default Home) to the front. */
-    val homeRequests: StateFlow<Int> = _homeRequests.asStateFlow()
-
     val pureBlack: StateFlow<Boolean> = settings.settings.map { it.pureBlackTheme }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
         viewModelScope.launch { _startup.value = startupManager.run() }
-    }
-
-    fun onHomePressed() {
-        _homeRequests.value++
     }
 }

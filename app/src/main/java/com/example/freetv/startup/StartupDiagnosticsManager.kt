@@ -6,8 +6,7 @@ import com.example.freetv.data.network.NetworkMonitor
 import com.example.freetv.domain.model.LanguageCatalog
 import com.example.freetv.domain.repository.GroupRepository
 import com.example.freetv.domain.repository.SettingsRepository
-import com.example.freetv.launcher.DefaultLauncherManager
-import com.example.freetv.launcher.LauncherStatus
+import android.content.Intent
 import com.example.freetv.preferences.RestoreOutcome
 import com.example.freetv.preferences.StartupPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,14 +23,17 @@ data class DiagnosticItem(val label: String, val value: String, val state: Diagn
 @Singleton
 class StartupDiagnosticsManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val launcherManager: DefaultLauncherManager,
     private val networkMonitor: NetworkMonitor,
     private val settings: SettingsRepository,
     private val startupPrefs: StartupPreferences,
     private val groups: GroupRepository,
 ) {
     suspend fun run(): List<DiagnosticItem> {
-        val launcher = launcherManager.inspect()
+        val leanbackRegistered = runCatching {
+            val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER).setPackage(context.packageName)
+            @Suppress("DEPRECATION")
+            context.packageManager.queryIntentActivities(intent, 0).isNotEmpty()
+        }.getOrDefault(false)
         val s = settings.current()
         val prefs = startupPrefs.current()
         val dateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
@@ -51,29 +53,9 @@ class StartupDiagnosticsManager @Inject constructor(
                 "${context.packageName} ${BuildConfig.VERSION_NAME}",
             ),
             DiagnosticItem(
-                "HOME intent registered",
-                if (launcher.homeRegistered) "Pass" else "Fail",
-                if (launcher.homeRegistered) DiagnosticState.PASS else DiagnosticState.FAIL,
-                launcher.ownComponent,
-            ),
-            DiagnosticItem(
-                "LEANBACK launcher registered",
-                if (launcher.leanbackRegistered) "Pass" else "Fail",
-                if (launcher.leanbackRegistered) DiagnosticState.PASS else DiagnosticState.FAIL,
-            ),
-            DiagnosticItem(
-                "FreeTV selected as default HOME",
-                when (launcher.status) {
-                    LauncherStatus.FREE_TV_IS_DEFAULT -> "Yes"
-                    LauncherStatus.ANOTHER_LAUNCHER_IS_DEFAULT, LauncherStatus.DEFAULT_NOT_SELECTED -> "No"
-                    LauncherStatus.STATUS_UNKNOWN -> "Unknown"
-                },
-                when (launcher.status) {
-                    LauncherStatus.FREE_TV_IS_DEFAULT -> DiagnosticState.YES
-                    LauncherStatus.ANOTHER_LAUNCHER_IS_DEFAULT, LauncherStatus.DEFAULT_NOT_SELECTED -> DiagnosticState.NO
-                    LauncherStatus.STATUS_UNKNOWN -> DiagnosticState.UNKNOWN
-                },
-                launcher.detail,
+                "Shown in the TV's Apps row (LEANBACK launcher)",
+                if (leanbackRegistered) "Pass" else "Fail",
+                if (leanbackRegistered) DiagnosticState.PASS else DiagnosticState.FAIL,
             ),
             networkMonitor.currentlyOnline().let { online ->
                 DiagnosticItem("Internet available", if (online) "Yes" else "No", if (online) DiagnosticState.YES else DiagnosticState.NO)

@@ -2,9 +2,6 @@ package com.example.freetv.startup
 
 import com.example.freetv.domain.model.StartScreen
 import com.example.freetv.domain.model.StartupLanguageMode
-import com.example.freetv.launcher.DefaultLauncherManager
-import com.example.freetv.launcher.LauncherStatus
-import com.example.freetv.launcher.ResolvedHome
 import com.example.freetv.preferences.LastWatchedChannel
 import com.example.freetv.preferences.RestoreOutcome
 import org.junit.Assert.assertEquals
@@ -138,44 +135,5 @@ class HomeTabRestorerTest {
     @Test
     fun `without language tabs falls back to all channels`() {
         assertEquals("all", choose(tabList = tabs.filter { !it.isLanguage }).key)
-    }
-}
-
-class LauncherStatusTest {
-    private val own = "com.example.freetv"
-
-    @Test
-    fun `role holder is default`() {
-        assertEquals(LauncherStatus.FREE_TV_IS_DEFAULT, DefaultLauncherManager.classify(own, true, null))
-    }
-
-    @Test
-    fun `resolver activity means no default selected`() {
-        assertEquals(
-            LauncherStatus.DEFAULT_NOT_SELECTED,
-            DefaultLauncherManager.classify(own, false, ResolvedHome("android", "com.android.internal.app.ResolverActivity")),
-        )
-    }
-
-    @Test
-    fun `another package resolving HOME is another default`() {
-        assertEquals(
-            LauncherStatus.ANOTHER_LAUNCHER_IS_DEFAULT,
-            DefaultLauncherManager.classify(own, null, ResolvedHome("com.other.launcher", "com.other.launcher.Home")),
-        )
-    }
-
-    @Test
-    fun `own package resolving HOME without role info counts as default`() {
-        assertEquals(
-            LauncherStatus.FREE_TV_IS_DEFAULT,
-            DefaultLauncherManager.classify(own, null, ResolvedHome(own, "com.example.freetv.MainActivity")),
-        )
-    }
-
-    @Test
-    fun `contradicting role answer and no resolution are unknown`() {
-        assertEquals(LauncherStatus.STATUS_UNKNOWN, DefaultLauncherManager.classify(own, false, ResolvedHome(own, "x")))
-        assertEquals(LauncherStatus.STATUS_UNKNOWN, DefaultLauncherManager.classify(own, null, null))
     }
 }

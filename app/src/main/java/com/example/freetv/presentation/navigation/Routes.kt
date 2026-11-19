@@ -20,9 +20,6 @@ sealed interface FreeTvRoute {
     ) : FreeTvRoute
 
     @Serializable
-    data object GoogleTvSetup : FreeTvRoute
-
-    @Serializable
     data object StartupDiagnostics : FreeTvRoute
 
     @Serializable

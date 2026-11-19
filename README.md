@@ -32,17 +32,9 @@ Every channel from a language playlist goes into its language group (தமி�
 
 Home screen tabs: languages, Favourites, Recently watched, All channels, then category and custom groups.
 
-## Startup and Google TV Home
+## Startup
 
-**Settings → Google TV Setup** shows:
-
-- Whether FreeTV is the default Home app (Yes / No / Unknown). This is read from Android's RoleManager or HOME resolution, never from the manifest alone.
-- A button that asks Android to make FreeTV the Home app (Android 10+, where the TV allows it), and a button that opens the Home settings, with manual steps as a fallback.
-- An ADB guide that uses this TV's real package and activity.
-- How to restore the original launcher, listing the other Home apps actually found on the TV.
-- **Startup Diagnostics**, with Refresh and Copy buttons.
-
-Startup settings:
+FreeTV is a normal app in the TV's Apps row. It does not replace the Google TV Home screen.
 
 | Setting | Default |
 |---|---|
@@ -51,22 +43,9 @@ Startup settings:
 | Restore last selected group | On |
 | Show startup diagnostics | Off |
 
-When FreeTV is opened, it restores the language or group and, if auto-play is on, plays the last channel. It does this only when the channel still exists, has a valid stream and the TV is online; it also tries the stream that worked last time first. If playback fails, FreeTV returns to home with the error. When offline, FreeTV shows home with an offline banner and a Retry button.
+When you open FreeTV, it restores your last language or group. If auto-play is on, it plays the last channel – but only when that channel still exists, has a valid stream and the TV is online, and it tries the stream that worked last time first. If playback fails, FreeTV returns to home and shows the error. When offline, home shows an offline banner with a Retry button. **Settings → Startup diagnostics** shows the network status, last channel, auto-play setting and last restore result, with Refresh and Copy buttons.
 
-**Limitations (by design):** FreeTV never starts itself in the background or at boot. Whether the HOME button opens FreeTV, and what appears after power-on or wake from standby, is decided by the TV's firmware. Many Google TV devices only allow Google's own Home screen.
-
-### ADB commands
-
-```bash
-adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME
-adb shell pm list packages | grep freetv
-# debug build component (check the exact one in Settings → Google TV Setup):
-adb shell cmd package set-home-activity com.example.freetv.debug/com.example.freetv.MainActivity
-adb shell input keyevent KEYCODE_HOME
-adb shell dumpsys activity activities | findstr mResumedActivity   # Windows
-```
-
-To restore the original launcher, use Settings → Apps → Default apps → Home app. Or run `set-home-activity` with the original launcher's component, exactly as listed by the query command or in FreeTV's Google TV Setup screen. FreeTV never disables or uninstalls Google's launcher.
+FreeTV never starts itself in the background or when the TV turns on.
 
 ## Remote control keys
 
@@ -169,6 +148,6 @@ How a refresh keeps your changes: each channel is identified by its playlist plu
 
 ## Tests
 
-`./gradlew testDebugUnitTest` runs 67 tests covering M3U parsing, duplicate merging, multiple-playlist import, refresh preservation, group creation and assignment, number assignment, duplicate-number prevention and swapping, backup-stream failover, remote numeric input, language persistence, XMLTV parsing, URL redaction, the v1→v2 database migration, startup decisions, language/group restore, default-launcher status, language playlist seeding and last-watched persistence.
+`./gradlew testDebugUnitTest` runs 67 tests covering M3U parsing, duplicate merging, multiple-playlist import, refresh preservation, group creation and assignment, number assignment, duplicate-number prevention and swapping, backup-stream failover, remote numeric input, language persistence, XMLTV parsing, URL redaction, the v1→v2 database migration, startup decisions, language/group restore, language playlist seeding and last-watched persistence.
 
 Manual check on a TV: remote navigation on every screen, number keys in the player and on home, Home/Back during playback (playback stops and resumes), restarting the app (language and last channel restored), unplugging the network during playback (the app waits, then resumes), and a large playlist (10k+ channels).
