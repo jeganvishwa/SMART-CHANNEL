@@ -300,22 +300,12 @@ fun AddPlaylistScreen(
     when (val status = ui.status) {
         is AddPlaylistStatus.Working -> ImportProgressOverlay(status.progress.stage, status.progress.fraction, status.progress.detail)
         is AddPlaylistStatus.Error -> MessageDialog("Could not import", status.message, viewModel::dismissStatus)
-        is AddPlaylistStatus.Duplicate -> ConfirmDialog(
-            title = "Playlist already added",
-            message = "This URL is already used by \"${status.existingName}\". Add it again anyway?",
-            confirmText = "Add anyway",
-            onConfirm = {
-                viewModel.dismissStatus()
-                viewModel.save(allowDuplicate = true)
-            },
-            onDismiss = viewModel::dismissStatus,
-        )
         AddPlaylistStatus.Editing -> Unit
     }
 
     importedSummary?.let { (id, summary) ->
         ConfirmDialog(
-            title = "Playlist imported",
+            title = "Playlist ready",
             message = "$summary. Channels were numbered and sorted into language and category groups automatically.",
             confirmText = "View channels",
             dismissText = "Done",

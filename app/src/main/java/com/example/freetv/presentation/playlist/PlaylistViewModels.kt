@@ -59,7 +59,6 @@ class PlaylistManagerViewModel @Inject constructor(
             message.value = when (result) {
                 is ImportResult.Success -> "Updated: ${result.channelCount} channels (${result.newChannels} new, ${result.removedChannels} removed)"
                 is ImportResult.Failure -> "Refresh failed: ${result.message}"
-                is ImportResult.DuplicatePlaylist -> null
             }
         }
     }
@@ -92,7 +91,6 @@ sealed interface AddPlaylistStatus {
     data object Editing : AddPlaylistStatus
     data class Working(val progress: ImportProgress) : AddPlaylistStatus
     data class Error(val message: String) : AddPlaylistStatus
-    data class Duplicate(val existingName: String) : AddPlaylistStatus
 }
 
 data class AddPlaylistUiState(
@@ -150,7 +148,7 @@ class AddPlaylistViewModel @Inject constructor(
     fun dismissStatus() = _ui.update { it.copy(status = AddPlaylistStatus.Editing) }
     fun showError(message: String) = _ui.update { it.copy(status = AddPlaylistStatus.Error(message)) }
 
-    fun save(allowDuplicate: Boolean = false) {
+    fun save() {
         val state = _ui.value
         if (state.status is AddPlaylistStatus.Working) return
         viewModelScope.launch {
@@ -167,7 +165,7 @@ class AddPlaylistViewModel @Inject constructor(
                 return@launch
             }
             working()
-            handle(repository.importFromUrl(state.name, state.url, state.autoRefresh, allowDuplicate, ::onProgress))
+            handle(repository.importFromUrl(state.name, state.url, state.autoRefresh, ::onProgress))
         }
     }
 
@@ -205,13 +203,13 @@ class AddPlaylistViewModel @Inject constructor(
                 events.send(
                     AddPlaylistEvent.Imported(
                         result.playlistId,
-                        "${result.channelCount} channels detected" +
+                        (if (result.replacedExisting) "This URL was already added, so that playlist was updated: " else "") +
+                            "${result.channelCount} channels detected" +
                             (if (result.duplicatesMerged > 0) ", ${result.duplicatesMerged} duplicates merged" else "") +
                             (if (result.invalidEntries > 0) ", ${result.invalidEntries} invalid entries skipped" else ""),
                     ),
                 )
             }
-            is ImportResult.DuplicatePlaylist -> _ui.update { it.copy(status = AddPlaylistStatus.Duplicate(result.existingName)) }
             is ImportResult.Failure -> showError(result.message)
         }
     }

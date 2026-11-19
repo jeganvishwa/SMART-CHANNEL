@@ -39,6 +39,7 @@ class PlaylistRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val playlistDao: PlaylistDao,
     private val syncer: PlaylistSyncer,
+    private val deduplicator: PlaylistDeduplicator,
     private val downloader: Downloader,
     private val settings: SettingsRepository,
     @IoDispatcher private val io: CoroutineDispatcher,
@@ -58,21 +59,34 @@ class PlaylistRepositoryImpl @Inject constructor(
 
     override suspend fun getPlaylist(id: Long): Playlist? = playlistDao.getById(id)?.toDomain()
 
-    override suspend fun findByUrl(url: String): Playlist? = playlistDao.getByUrl(url.trim())?.toDomain()
+    override suspend fun findByUrl(url: String): Playlist? = findEntityByUrl(url)?.toDomain()
+
+    /** Finds a URL playlist with the same address (see [UrlSanitizer.normalizeForCompare]). */
+    private suspend fun findEntityByUrl(url: String): PlaylistEntity? {
+        val key = UrlSanitizer.normalizeForCompare(url)
+        return playlistDao.getAll().firstOrNull { it.url != null && UrlSanitizer.normalizeForCompare(it.url) == key }
+    }
+
+    override suspend fun mergeDuplicatePlaylists(): Int = deduplicator.mergeDuplicates()
 
     override suspend fun importFromUrl(
         name: String,
         url: String,
         autoRefresh: Boolean,
-        allowDuplicate: Boolean,
         onProgress: (ImportProgress) -> Unit,
     ): ImportResult {
         val clean = url.trim()
         if (!UrlSanitizer.isValidRemoteUrl(clean)) {
             return ImportResult.Failure("Invalid URL. Enter a full address starting with http:// or https://")
         }
-        if (!allowDuplicate) {
-            playlistDao.getByUrl(clean)?.let { return ImportResult.DuplicatePlaylist(it.id, it.name) }
+        // Same URL already added: replace (update) that playlist instead of creating a duplicate.
+        // Its channel numbers, favourites and groups are kept; a failed download keeps the old channels.
+        findEntityByUrl(clean)?.let { existing ->
+            playlistDao.update(
+                existing.copy(name = name.trim().ifEmpty { existing.name }, url = clean, autoRefresh = autoRefresh),
+            )
+            val result = refresh(existing.id, onProgress)
+            return if (result is ImportResult.Success) result.copy(replacedExisting = true) else result
         }
         val id = playlistDao.insert(
             PlaylistEntity(
@@ -226,7 +240,7 @@ class PlaylistRepositoryImpl @Inject constructor(
         if (playlist.sourceType == "URL") {
             val clean = url?.trim().orEmpty()
             if (!UrlSanitizer.isValidRemoteUrl(clean)) return Result.failure(IllegalArgumentException("Invalid URL"))
-            val other = playlistDao.getByUrl(clean)
+            val other = findEntityByUrl(clean)
             if (other != null && other.id != id) {
                 return Result.failure(IllegalArgumentException("This URL is already used by \"${other.name}\""))
             }

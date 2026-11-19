@@ -12,6 +12,7 @@ import com.example.freetv.domain.model.ImportResult
 import com.example.freetv.domain.model.LanguageCatalog
 import com.example.freetv.domain.repository.PlaylistRepository
 import com.example.freetv.preferences.StartupPreferences
+import com.example.freetv.utils.UrlSanitizer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +50,7 @@ class LanguageFolderManager @Inject constructor(
 @Singleton
 class LanguagePlaylistInitializer @Inject constructor(
     private val playlistDao: PlaylistDao,
+    private val deduplicator: PlaylistDeduplicator,
     private val playlists: PlaylistRepository,
     private val folders: LanguageFolderManager,
     private val startupPrefs: StartupPreferences,
@@ -64,7 +66,8 @@ class LanguagePlaylistInitializer @Inject constructor(
     suspend fun ensurePlaylists(now: Long = System.currentTimeMillis()): List<Long> =
         LanguageCatalog.PLAYLISTS.map { lp ->
             folders.ensureLanguageGroup(lp.groupName)
-            val existing = playlistDao.getByUrl(lp.url)
+            val key = UrlSanitizer.normalizeForCompare(lp.url)
+            val existing = playlistDao.getAll().firstOrNull { it.url != null && UrlSanitizer.normalizeForCompare(it.url) == key }
             if (existing != null) {
                 if (existing.languageCode != lp.code || existing.folder != lp.folder) {
                     playlistDao.update(existing.copy(languageCode = lp.code, folder = lp.folder))
@@ -86,10 +89,15 @@ class LanguagePlaylistInitializer @Inject constructor(
             }
         }
 
-    /** First launch only: add the language playlists and import them in the background. */
+    /**
+     * Every app start: merge playlists that share a URL. First launch only: add the
+     * language playlists and import them in the background.
+     */
     fun initializeOnFirstLaunch() {
         scope.launch {
             runCatching {
+                val merged = deduplicator.mergeDuplicates()
+                if (merged > 0) Log.i(TAG, "Merged $merged duplicate playlist(s)")
                 if (startupPrefs.current().languagePlaylistsSeeded) return@launch
                 val ids = ensurePlaylists()
                 startupPrefs.setLanguagePlaylistsSeeded()
@@ -118,7 +126,6 @@ class LanguagePlaylistInitializer @Inject constructor(
                 when (val result = playlists.refresh(id)) {
                     is ImportResult.Success -> ok++
                     is ImportResult.Failure -> failed += "$name (${result.message})"
-                    is ImportResult.DuplicatePlaylist -> Unit
                 }
             }
             _status.value = Status(

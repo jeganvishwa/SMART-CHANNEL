@@ -25,8 +25,9 @@ android {
         applicationId = "com.example.freetv"
         minSdk = 23
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        // Increase versionCode for every APK given to the TV so it installs as an update.
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

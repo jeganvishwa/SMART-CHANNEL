@@ -33,9 +33,11 @@ interface PlaylistRepository {
         name: String,
         url: String,
         autoRefresh: Boolean,
-        allowDuplicate: Boolean = false,
         onProgress: (ImportProgress) -> Unit = {},
     ): ImportResult
+
+    /** Merges playlists that share the same URL into one. Returns the number of duplicates removed. */
+    suspend fun mergeDuplicatePlaylists(): Int
 
     suspend fun importFromUri(name: String, uri: Uri, onProgress: (ImportProgress) -> Unit = {}): ImportResult
     suspend fun importFromFile(name: String, file: File, onProgress: (ImportProgress) -> Unit = {}): ImportResult

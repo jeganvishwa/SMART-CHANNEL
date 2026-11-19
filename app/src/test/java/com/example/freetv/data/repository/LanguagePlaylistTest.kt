@@ -57,6 +57,7 @@ class LanguagePlaylistTest {
         prefs = StartupPreferences(PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "s.preferences_pb") })
         initializer = LanguagePlaylistInitializer(
             playlistDao = db.playlistDao(),
+            deduplicator = PlaylistDeduplicator(db),
             playlists = mockk<PlaylistRepository>(relaxed = true),
             folders = LanguageFolderManager(db.groupDao()),
             startupPrefs = prefs,

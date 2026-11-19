@@ -18,9 +18,9 @@ sealed interface ImportResult {
         val removedChannels: Int,
         val duplicatesMerged: Int,
         val invalidEntries: Int,
+        /** True when the URL was already added and that playlist was replaced (updated) instead of duplicated. */
+        val replacedExisting: Boolean = false,
     ) : ImportResult
-
-    data class DuplicatePlaylist(val existingId: Long, val existingName: String) : ImportResult
 
     data class Failure(val message: String) : ImportResult
 }

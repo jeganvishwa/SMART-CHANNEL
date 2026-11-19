@@ -33,6 +33,19 @@ object UrlSanitizer {
         return host.isNotEmpty()
     }
 
+    /**
+     * Key used to decide whether two playlist URLs are "the same": trimmed,
+     * scheme and host lower-cased, trailing slash removed. Path and query stay
+     * case-sensitive because servers treat them that way.
+     */
+    fun normalizeForCompare(url: String): String {
+        val trimmed = url.trim().trimEnd('/')
+        val schemeEnd = trimmed.indexOf("://")
+        if (schemeEnd <= 0) return trimmed
+        val authorityEnd = trimmed.indexOfAny(charArrayOf('/', '?', '#'), schemeEnd + 3).let { if (it < 0) trimmed.length else it }
+        return trimmed.substring(0, authorityEnd).lowercase() + trimmed.substring(authorityEnd)
+    }
+
     /** Replaces user-info and sensitive query values with `***`. */
     fun redact(url: String?): String {
         if (url.isNullOrEmpty()) return ""

@@ -60,6 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.example.freetv.BuildConfig
 import com.example.freetv.domain.model.ChannelItem
 import com.example.freetv.domain.model.EpgProgram
 import com.example.freetv.domain.model.formatChannelNumber
@@ -227,6 +228,12 @@ private fun SideMenu(onNavigate: (HomeDestination) -> Unit) {
         Text(
             "Type a channel number on the remote to jump to it. Hold OK on a channel to add it to favourites.",
             style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "Version ${BuildConfig.VERSION_NAME}",
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
